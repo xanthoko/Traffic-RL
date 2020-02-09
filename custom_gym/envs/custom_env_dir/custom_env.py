@@ -5,8 +5,8 @@ from gym import spaces
 STARTING_DISTANCE = 3
 
 STARTING_POSITION = (0, 0)
-GOAL_POSITION = (3, 0)
-PATH_ARRAY = np.array([[1, 0], [1, 1], [1, 1], [1, 0]])
+GOAL_POSITION = (4, 0)
+PATH_ARRAY = np.array([[1, 1], [1, 0], [1, 1], [1, 1], [1, 0]])
 
 
 class TrafficEnv(gym.Env):
@@ -53,15 +53,18 @@ class TrafficEnv(gym.Env):
         self.path.append(self.current_position)
 
         self.time_passed += 1
+        self.distance_to_goal = GOAL_POSITION[0] - self.current_position[0]
 
+        state = [self.time_passed, self.distance_to_goal]
         done = self.current_position == GOAL_POSITION
-        reward = 100 - self.time_passed
+        reward = 100 - self.time_passed - self.distance_to_goal
 
-        return {}, reward, done, {}
+        return state, reward, done, {}
 
     def reset(self):
         self.distance_to_goal = STARTING_DISTANCE
         self.time_passed = 0
+        return self.time_passed, self.distance_to_goal
 
     def render(self):
         copy_path_array = PATH_ARRAY.copy()
@@ -78,3 +81,4 @@ class TrafficEnv(gym.Env):
         # add a seperation line
         printable_path += '\n-------------------'
         print(printable_path)
+        print(self.path)

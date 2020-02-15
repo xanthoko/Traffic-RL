@@ -126,8 +126,8 @@ class QAgent():
 
             next_state = np.argmax(Q[starting_state, ])
             next_location, counter = self.state_to_location(next_state)
-
             route.append(next_location)
+
             start_location = next_location
 
         print(route)

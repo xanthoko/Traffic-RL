@@ -1,61 +1,21 @@
 import numpy as np
-"""State depends on 2 variables. Location and Time passed"""
-
-PATH_ARRAY = np.array([[1, 1], [1, 1]])
-height, width = PATH_ARRAY.shape
-max_time_passed = 4
-
-gamma = 0.75  # Discount factor
-alpha = 0.9  # Learning rate
-
-# (2d indexes converted to 1d) * width + the time passed
-location_to_state = lambda x, y: (x[0] * width + x[1]) * max_time_passed + y
-
-
-def state_to_location(state):
-    location, time = divmod(state, max_time_passed)
-    x, y = divmod(location, width)
-    return (x, y), time
-
-
-# 16 states, max_state = 15
-max_state = location_to_state((height - 1, width - 1), max_time_passed - 1)
-
-actions = [0, 1, 2, 3, 4]  # stay, left, down, right, up
-
-pos1_rews = [[0, 0, 1, 1, 0] for x in range(max_time_passed)]
-pos2_rews = [[0, 1, 0, 1, 0] for x in range(max_time_passed)]
-pos3_rews = [[0, 0, 0, 1, 1] for x in range(max_time_passed)]
-pos4_rews = [[0, 1, 0, 0, 1] for x in range(max_time_passed)]
-
-pos2_rews[1] = [1, 0, 0, 0, 0]  # light logic
-
-pos1_rews[max_time_passed - 1] = [1, 0, 0, 0, 0]
-pos2_rews[max_time_passed - 1] = [1, 0, 0, 0, 0]
-pos3_rews[max_time_passed - 1] = [1, 0, 0, 0, 0]
-pos4_rews[max_time_passed - 1] = [1, 0, 0, 0, 0]
-
-all_pos = pos1_rews + pos2_rews + pos3_rews + pos4_rews
-rewards = np.array(all_pos)
-
-Q = np.array(np.zeros([max_state + 1, max_state + 1]))
+from routes import RoutePlan
 
 
 class QAgent():
-
-    # Initialize alpha, gamma, states, actions, rewards, and Q-values
-    def __init__(self, alpha, gamma, location_to_state, actions, rewards,
-                 state_to_location, Q):
+    def __init__(self, alpha, gamma, actions, rp):
 
         self.gamma = gamma
         self.alpha = alpha
 
-        self.location_to_state = location_to_state
+        self.location_to_state = rp.location_to_state
         self.actions = actions
-        self.rewards = rewards
-        self.state_to_location = state_to_location
+        self.rewards = rp.rewards
+        self.state_to_location = rp.state_to_location
+        self.max_state = rp.max_state
+        self.max_time_passed = rp.max_time
 
-        self.Q = Q
+        self.Q = np.array(np.zeros([rp.max_state + 1, rp.max_state + 1]))
 
     # Training the robot in the environment
     def training(self, start_location, end_location, iterations):
@@ -64,17 +24,18 @@ class QAgent():
 
         # get the state at the end location for every time
         end_location_states = [
-            location_to_state(end_location, x) for x in range(max_time_passed)
+            self.location_to_state(end_location, x)
+            for x in range(self.max_time_passed)
         ]
         # set the ending state reward
         for end_state in end_location_states:
             rewards_new[end_state] = [999, 0, 0, 0, 0]  # stay at end location
 
         for i in range(iterations):
-            current_state = np.random.randint(0, max_state)
+            current_state = np.random.randint(0, self.max_state)
 
             playable_actions = [
-                x for x in range(len(actions)) if rewards_new[current_state, x]
+                x for x in range(len(self.actions)) if rewards_new[current_state, x]
             ]
 
             if not playable_actions:
@@ -83,21 +44,25 @@ class QAgent():
             direction = np.random.choice(playable_actions)
 
             if direction == 1:
-                current_location, current_time = state_to_location(current_state)
+                current_location, current_time = self.state_to_location(
+                    current_state)
                 next_location = (current_location[0], current_location[1] - 1)
-                next_state = location_to_state(next_location, current_time + 1)
+                next_state = self.location_to_state(next_location, current_time + 1)
             elif direction == 2:
-                current_location, current_time = state_to_location(current_state)
+                current_location, current_time = self.state_to_location(
+                    current_state)
                 next_location = (current_location[0] + 1, current_location[1])
-                next_state = location_to_state(next_location, current_time + 1)
+                next_state = self.location_to_state(next_location, current_time + 1)
             elif direction == 3:
-                current_location, current_time = state_to_location(current_state)
+                current_location, current_time = self.state_to_location(
+                    current_state)
                 next_location = (current_location[0], current_location[1] + 1)
-                next_state = location_to_state(next_location, current_time + 1)
+                next_state = self.location_to_state(next_location, current_time + 1)
             elif direction == 4:
-                current_location, current_time = state_to_location(current_state)
+                current_location, current_time = self.state_to_location(
+                    current_state)
                 next_location = (current_location[0] - 1, current_location[1])
-                next_state = location_to_state(next_location, current_time + 1)
+                next_state = self.location_to_state(next_location, current_time + 1)
             else:
                 next_state = current_state
 
@@ -133,7 +98,25 @@ class QAgent():
         print(route)
 
 
-qagent = QAgent(alpha, gamma, location_to_state, actions, rewards,
-                state_to_location, Q)
+def main():
+    gamma = 0.75  # Discount factor
+    alpha = 0.9  # Learning rate
+    actions = [0, 1, 2, 3, 4]  # stay, left, down, right, up
 
-qagent.training((0, 0), (1, 1), 1000)
+    shape = (2, 2)
+    connections = [[(0, 0), (0, 1)], [(0, 0), (1, 0)], [(0, 1), (1, 1)],
+                   [(1, 0), (1, 1)]]
+    max_time_passed = 4
+
+    rp = RoutePlan(shape, connections, max_time_passed)
+    rp.form_rewards()
+    rp.add_light((1, 0), 1, 1)
+
+    qagent = QAgent(alpha, gamma, actions, rp)
+    qagent.training((0, 0), (1, 1), 1000)
+
+    return
+
+
+if __name__ == '__main__':
+    main()

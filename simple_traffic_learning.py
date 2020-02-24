@@ -3,13 +3,12 @@ from routes import RoutePlan
 
 
 class QAgent():
-    def __init__(self, alpha, gamma, actions, rp):
-
+    def __init__(self, gamma, alpha, rp):
         self.gamma = gamma
         self.alpha = alpha
+        self.actions = [0, 1, 2, 3, 4]  # stay, left, down, right, up
 
         self.location_to_state = rp.location_to_state
-        self.actions = actions
         self.rewards = rp.rewards
         self.state_to_location = rp.state_to_location
         self.max_state = rp.max_state
@@ -99,9 +98,8 @@ class QAgent():
 
 
 def main():
-    gamma = 0.75  # Discount factor
-    alpha = 0.9  # Learning rate
-    actions = [0, 1, 2, 3, 4]  # stay, left, down, right, up
+    gamma = 0.75
+    alpha = 0.9
 
     shape = (2, 2)
     connections = [[(0, 0), (0, 1)], [(0, 0), (1, 0)], [(0, 1), (1, 1)],
@@ -112,7 +110,7 @@ def main():
     rp.form_rewards()
     rp.add_light((1, 0), 1, 1)
 
-    qagent = QAgent(alpha, gamma, actions, rp)
+    qagent = QAgent(gamma, alpha, rp)
     qagent.training((0, 0), (1, 1), 1000)
 
     return

@@ -1,7 +1,10 @@
 import os
 import cgi
-
+import json
 from http.server import BaseHTTPRequestHandler, HTTPServer
+
+from routes import RoutePlan
+from simple_traffic_learning import QAgent
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -37,11 +40,20 @@ class myHandler(BaseHTTPRequestHandler):
             # only form-data is accepted
             fields = {}
 
-        steps = parse_form_data(fields)
+        shape, connections = parse_form_data(fields)
         response_code = 200
 
+        rp = RoutePlan((shape, shape), connections, shape * 2)
+        rp.form_rewards()
+
+        qagent = QAgent(0.75, 0.9, rp)
+        loc_route, state_route = qagent.training((0, 0), (shape - 1, shape - 1),
+                                                 1000)
+
+        response_data = json.dumps({"route": state_route})
+
         # Send the "message" field back as the response.
-        self.send_response(response_code)
+        self.send_response(response_code, response_data)
         self.send_header('Content-type', 'text/plain; charset=utf-8')
         self.end_headers()
         self.wfile.write(b'')
@@ -76,9 +88,9 @@ def handle_request(path):
 def parse_form_data(data):
     """Decomposes the given form-data and returns a steps list."""
     # data = {'steps': ['right,left']}
-    steps_list = data['steps'][0]
-    steps = steps_list.split(',')
-    return steps
+    connection_param = json.loads(data['connections'][0])
+    shape = json.loads(data['shape'][0])
+    return shape, connection_param
 
 
 def run():

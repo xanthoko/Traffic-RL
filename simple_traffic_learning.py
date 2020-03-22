@@ -9,6 +9,7 @@ class QAgent():
         self.actions = [0, 1, 2, 3, 4]  # stay, left, down, right, up
 
         self.location_to_state = rp.location_to_state
+        self.ltss = rp.location_to_simple_state
         self.rewards = rp.rewards
         self.state_to_location = rp.state_to_location
         self.max_state = rp.max_state
@@ -71,19 +72,20 @@ class QAgent():
 
             self.Q[current_state, next_state] += self.alpha * TD
 
-        route = [start_location]
         next_location = start_location
 
         # Get the route
-        self.get_optimal_route(start_location, end_location, next_location, route,
-                               self.Q)
-
+        opt_route, opt_states = self.get_optimal_route(start_location, end_location,
+                                                       next_location, self.Q)
         self.rewards_new = rewards_new
 
-    # Get the optimal route
-    def get_optimal_route(self, start_location, end_location, next_location, route,
-                          Q):
+        return opt_route, opt_states
 
+    # Get the optimal route
+    def get_optimal_route(self, start_location, end_location, next_location, Q):
+
+        route = [start_location]
+        states = []
         counter = 0
         while (next_location != end_location):
             starting_state = self.location_to_state(start_location, counter)
@@ -92,28 +94,33 @@ class QAgent():
             next_location, counter = self.state_to_location(next_state)
             route.append(next_location)
 
+            states.append([self.ltss(start_location), self.ltss(next_location)])
+
             start_location = next_location
 
-        print(route)
+        return route, states
 
 
 def main():
     gamma = 0.75
     alpha = 0.9
 
-    shape = (2, 2)
-    connections = [[(0, 0), (0, 1)], [(0, 0), (1, 0)], [(0, 1), (1, 1)],
-                   [(1, 0), (1, 1)]]
-    max_time_passed = 4
+    # shape = (2, 2)
+    # connections = [[(0, 0), (0, 1)], [(0, 0), (1, 0)], [(0, 1), (1, 1)],
+    #                [(1, 0), (1, 1)]]
+    # max_time_passed = 4
+    shape = (3, 3)
+    connections = [[(0, 0), (0, 1)], [(0, 1), (0, 2)], [(0, 2), (1, 2)],
+                   [(1, 2), (2, 2)]]
+    max_time_passed = 10
 
     rp = RoutePlan(shape, connections, max_time_passed)
     rp.form_rewards()
-    rp.add_light((1, 0), 1, 1)
+    # rp.add_light((1, 0), 1, 1)
 
     qagent = QAgent(gamma, alpha, rp)
-    qagent.training((0, 0), (1, 1), 1000)
-
-    return
+    routes = qagent.training((0, 0), (2, 2), 1000)
+    print(routes[0])
 
 
 if __name__ == '__main__':

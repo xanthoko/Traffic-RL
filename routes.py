@@ -24,7 +24,19 @@ class RoutePlan:
         Returns:
             integer: The state
         """
-        return (location[0] * self.width + location[1]) * self.max_time + time
+        return int((location[0] * self.width + location[1]) * self.max_time + time)
+
+    def location_to_simple_state(self, location):
+        """Converts given location (x, y) to simple state (no time involved).
+
+        State increases horizontally.
+
+        Args:
+            location (tuple): location coordinates
+        Returns:
+            integer: The state
+        """
+        return int((location[0] * self.width + location[1]))
 
     def state_to_location(self, state):
         """Converts given state to 3d location (x, y, time).
@@ -36,7 +48,7 @@ class RoutePlan:
         """
         location, time = divmod(state, self.max_time)
         x, y = divmod(location, self.width)
-        return (x, y), time
+        return (int(x), int(y)), time
 
     def form_rewards(self):
         """Forms the rewards array base on the given connections."""

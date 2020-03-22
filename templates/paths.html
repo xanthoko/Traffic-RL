@@ -11,21 +11,23 @@
     <br>
     <div class="row">
         <div class="col">
-            <label for="shapeL">Enter the shape: </label>
-            <input type="text" id="shapeL" name="shapeL"><br><br>
+            <label for="shapeL">Enter the shape &nbsp;</label>
+            <input type="text" id="shapeL" name="shapeL">
             <button onclick="start('shapeL')">Submit</button>
         </div>
         <div class="col" id="connDiv" hidden>
             <label for="conns">Add the connections you want &nbsp;</label>
             <input type="text" id="conns" name="connection">
             <button onclick="addConn('conns')">Add</button>
+            <button onclick="getPath()">Start</button>
         </div>
+    </div>
 
-        <div class="row">
-            <div class="col">
-                <canvas id="pathCanvas" width="100" height="100"></canvas>
-            </div>
+    <div class="row">
+        <div class="col">
+            <canvas id="pathCanvas" width="100" height="100"></canvas>
         </div>
+    </div>
 </body>
 
 </html>
